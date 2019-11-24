@@ -1,9 +1,10 @@
-from keras.models import model_from_json
+from tensorflow.python.keras.models import model_from_json
 import tensorflow as tf
 import numpy as np
 import re
 import os
 from .tokenizer import tokenize
+from tensorflow.python.keras import backend as k
 
 VOWELS = 'аеиоуэюяыё'
 REG = '[{}].*[{}]'.format(VOWELS, VOWELS)
@@ -37,7 +38,7 @@ class Accent(object):
             json_string = content_file.read()
         self.model = model_from_json(json_string)
         self.model.load_weights(self.weights_file)
-        self.graph = tf.get_default_graph()
+        self.graph = k.get_graph()
 
 
     def __parse_the_phrase(self, text):
@@ -120,56 +121,55 @@ class Accent(object):
 
         All the formating is preserved using this function.
         """
-        with self.graph.as_default():
-            words = self.__parse_the_phrase(text)
-            tokens = tokenize(text)
-            accented_phrase = []
-            pluswords = self.__add_endings(words)
+        words = self.__parse_the_phrase(text)
+        tokens = tokenize(text)
+        accented_phrase = []
+        pluswords = self.__add_endings(words)
 
-            for w in pluswords:
-                if not bool(re.search(REG, w)):
-                    pass
-                else:
-                    accented_phrase.append(self.__predict(w))
-            final = []
+        for w in pluswords:
+            if not bool(re.search(REG, w)):
+                pass
+            else:
+                accented_phrase.append(self.__predict(w))
+        final = []
 
+        # print(accented_phrase)
+
+        for token in tokens:
             # print(accented_phrase)
-
-            for token in tokens:
-                # print(accented_phrase)
-                '''
-                elif self.__is_in_dictionary(token):
-                    stressed_token = self.__dictionary_stress(token)
-                    if stressed_token is None:
-                        try:
-                            temp = accented_phrase[0].replace("'", '')
-                        except IndexError:
-                            temp = ''
-                        if temp == token.lower():
-                            stress_position = accented_phrase[0].find("'")
-                            final.append(token[:stress_position] + \
-                                stress_symbol + token[stress_position:])
-                            accented_phrase = accented_phrase[1:]
-                        else:
-                            final.append(token)
-                    else:
-                        final.append(stressed_token)
-                        accented_phrase = accented_phrase[1:]
-                '''
-
-                if self.__is_small(token):
-                    final.append(token)
-                else:
+            '''
+            elif self.__is_in_dictionary(token):
+                stressed_token = self.__dictionary_stress(token)
+                if stressed_token is None:
                     try:
                         temp = accented_phrase[0].replace("'", '')
                     except IndexError:
                         temp = ''
                     if temp == token.lower():
                         stress_position = accented_phrase[0].find("'")
-                        final.append(token[:stress_position] +
-                                     stress_symbol + token[stress_position:])
+                        final.append(token[:stress_position] + \
+                            stress_symbol + token[stress_position:])
                         accented_phrase = accented_phrase[1:]
                     else:
                         final.append(token)
-            final = ''.join(final)
-            return final
+                else:
+                    final.append(stressed_token)
+                    accented_phrase = accented_phrase[1:]
+            '''
+
+            if self.__is_small(token):
+                final.append(token)
+            else:
+                try:
+                    temp = accented_phrase[0].replace("'", '')
+                except IndexError:
+                    temp = ''
+                if temp == token.lower():
+                    stress_position = accented_phrase[0].find("'")
+                    final.append(token[:stress_position] +
+                                    stress_symbol + token[stress_position:])
+                    accented_phrase = accented_phrase[1:]
+                else:
+                    final.append(token)
+        final = ''.join(final)
+        return final
