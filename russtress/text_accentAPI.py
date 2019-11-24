@@ -4,7 +4,6 @@ import numpy as np
 import re
 import os
 from .tokenizer import tokenize
-from tensorflow.python.keras import backend as k
 
 VOWELS = 'аеиоуэюяыё'
 REG = '[{}].*[{}]'.format(VOWELS, VOWELS)
@@ -38,7 +37,6 @@ class Accent(object):
             json_string = content_file.read()
         self.model = model_from_json(json_string)
         self.model.load_weights(self.weights_file)
-        self.graph = k.get_graph()
 
 
     def __parse_the_phrase(self, text):
